@@ -1,0 +1,17 @@
+{
+  "project": "esp_monitor",
+  "platform": "ios",
+  "github": {
+    "owner": "artemvinihenko",
+    "repo": "esp_monitor"
+  },
+  "ios": {
+    "path": "ios"
+  },
+  "flutter": {
+    "version": "3.41.6",
+    "watch": {}
+  },
+  "reactNative": {},
+  "mobai": {}
+}
