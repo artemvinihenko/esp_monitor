@@ -1,0 +1,56 @@
+name: esp_monitor
+description: ESP8266 Device Monitor with MQTT
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # MQTT
+  mqtt_client: ^10.0.0
+
+  # HTTP requests
+  http: ^1.1.0
+
+  # JSON serialization
+  json_annotation: ^4.8.1
+
+  # Shared preferences
+  shared_preferences: ^2.2.0
+
+  # ESP Touch (SmartConfig)
+  esp_smartconfig: ^3.0.0
+
+  # Permission handling
+  permission_handler: ^11.0.0
+
+  # Network info (замена wifi_info_flutter)
+  network_info_plus: ^5.0.0
+
+  # Device info
+  device_info_plus: ^9.1.0
+
+  mobile_scanner: ^4.0.0   # Альтернатива (более новая)
+
+  wakelock_plus: ^1.2.0   # Для удержания устройства активным
+
+  # UI
+  provider: ^6.1.0
+  intl: ^0.18.1
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  build_runner: ^2.4.6
+  json_serializable: ^6.7.1
+  flutter_lints: ^3.0.0
+
+flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true

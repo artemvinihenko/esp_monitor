@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>$(DEVELOPMENT_LANGUAGE)</string>
+    <key>CFBundleDisplayName</key>
+    <string>ESP8266 Monitor</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>esp_monitor</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>$(FLUTTER_BUILD_NAME)</string>
+    <key>CFBundleSignature</key>
+    <string>????</string>
+    <key>CFBundleVersion</key>
+    <string>$(FLUTTER_BUILD_NUMBER)</string>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+
+    <!-- ========== РАЗРЕШЕНИЯ ДЛЯ iOS ========== -->
+
+    <!-- Доступ к локальной сети (для MQTT и SmartConfig) -->
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>Приложению нужен доступ к локальной сети для подключения к ESP8266 устройствам и получения данных через MQTT</string>
+
+    <!-- Bonjour службы для обнаружения устройств -->
+    <key>NSBonjourServices</key>
+    <array>
+        <string>_mqtt._tcp</string>
+        <string>_http._tcp</string>
+        <string>_esp._tcp</string>
+    </array>
+
+    <!-- Доступ к камере (для QR-кода) -->
+    <key>NSCameraUsageDescription</key>
+    <string>Приложению нужен доступ к камере для сканирования QR-кодов устройств</string>
+
+    <!-- Доступ к Wi-Fi информации -->
+    <key>com.apple.developer.networking.wifi-info</key>
+    <true/>
+
+    <!-- Фоновые режимы (для MQTT) -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>fetch</string>
+        <string>remote-notification</string>
+        <string>processing</string>
+    </array>
+
+    <!-- Разрешение на работу в фоне -->
+    <key>BGTaskSchedulerPermittedIdentifiers</key>
+    <array>
+        <string>$(PRODUCT_BUNDLE_IDENTIFIER).mqtt</string>
+    </array>
+
+    <!-- ========== КОНЕЦ РАЗРЕШЕНИЙ ========== -->
+
+    <key>UILaunchStoryboardName</key>
+    <string>LaunchScreen</string>
+    <key>UIMainStoryboardFile</key>
+    <string>Main</string>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <key>CADisableMinimumFrameDurationOnPhone</key>
+    <true/>
+    <key>UIApplicationSupportsIndirectInputEvents</key>
+    <true/>
+</dict>
+</plist>
