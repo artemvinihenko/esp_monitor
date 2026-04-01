@@ -222,7 +222,7 @@ class _SmartConfigScreenState extends State<SmartConfigScreen> {
       _isLoading = true;
       _status = _isApMode
           ? 'Отправка настроек на устройство...'
-          : 'Отправка данных на ESP8266 через SmartConfig...\nУбедитесь, что устройство в режиме SmartConfig';
+          : 'Отправка данных на устройство через SmartConfig...\nУбедитесь, что устройство в режиме SmartConfig';
     });
 
     if (_isApMode) {
@@ -338,7 +338,7 @@ class _SmartConfigScreenState extends State<SmartConfigScreen> {
           login: _usernameController.text.trim(),
         );
 
-        await _prefs.addDevice(device);
+      //  await _prefs.addDevice(device);
 
         if (context.mounted) {
           final provider = Provider.of<DeviceProvider>(context, listen: false);
@@ -353,7 +353,7 @@ class _SmartConfigScreenState extends State<SmartConfigScreen> {
       }
     } catch (e) {
       _showError('Ошибка соединения: $e\n\n'
-          'Убедитесь, что вы подключены к точке доступа ESP8266 (${_apPrefixes.join(", ")})');
+          'Убедитесь, что вы подключены к точке доступа устройства (${_apPrefixes.join(", ")})');
     } finally {
       setState(() {
         _isLoading = false;
@@ -513,7 +513,7 @@ class _SmartConfigScreenState extends State<SmartConfigScreen> {
           login: _usernameController.text.trim(),
         );
 
-        await _prefs.addDevice(device);
+       // await _prefs.addDevice(device);
 
         if (context.mounted) {
           final provider = Provider.of<DeviceProvider>(context, listen: false);
@@ -619,7 +619,7 @@ class _SmartConfigScreenState extends State<SmartConfigScreen> {
                           ),
                           if (_isApMode)
                             const Text(
-                              'Вы подключены к точке доступа ESP8266',
+                              'Вы подключены к точке доступа устройства',
                               style: TextStyle(fontSize: 12, color: Colors.blue),
                             ),
                         ],
@@ -752,7 +752,7 @@ class _SmartConfigScreenState extends State<SmartConfigScreen> {
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Убедитесь, что ESP8266 находится в режиме SmartConfig.\n'
+                          'Убедитесь, что устройство находится в режиме SmartConfig.\n'
                               'Нажмите кнопку на устройстве или перезагрузите его.',
                           style: TextStyle(fontSize: 12),
                         ),
@@ -776,7 +776,7 @@ class _SmartConfigScreenState extends State<SmartConfigScreen> {
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Вы подключены к точке доступа ESP8266. '
+                          'Вы подключены к точке доступа устройства. '
                               'Введите имя вашей домашней Wi-Fi сети и нажмите "Отправить настройки".',
                           style: TextStyle(fontSize: 12),
                         ),

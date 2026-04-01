@@ -26,7 +26,7 @@
     <uses-feature android:name="android.hardware.camera.autofocus" />
 
     <application
-        android:label="esp_monitor"
+        android:label="IOT мониторинг"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

@@ -51,7 +51,7 @@ extension DeviceTypeExtension on DeviceType {
       case DeviceType.rele:
         return 'set';
       case DeviceType.termo1:
-        return 'temperature';
+        return 'set';
       case DeviceType.led:
         return 'set';
     }
@@ -68,7 +68,7 @@ extension DeviceTypeExtension on DeviceType {
       case DeviceType.rele:
         return '/rele/set';
       case DeviceType.termo1:
-        return '/termo1/set';
+        return '/temper/set';
       case DeviceType.led:
         return '/lamp/set';
     }
@@ -209,7 +209,7 @@ class DeviceModel {
       case DeviceType.rele:
         return 'datESP/$login/$mac/rele/set';
       case DeviceType.termo1:
-        return 'datESP/$login/$mac/termo1';
+        return 'datESP/$login/$mac/temper';
       case DeviceType.led:
         return 'datESP/$login/$mac/led/set';
     }
@@ -238,7 +238,7 @@ class DeviceModel {
       case DeviceType.rele:
         return 'rele/set';
       case DeviceType.termo1:
-        return 'termo1/set';
+        return 'temper/set';
       case DeviceType.led:
         return 'lamp/set';
     }

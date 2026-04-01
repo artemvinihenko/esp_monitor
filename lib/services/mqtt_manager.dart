@@ -155,9 +155,10 @@ class MqttManager {
           requiredTopics.add('datESP/$login/${device.mac}/rele/set');
            break;
         case DeviceType.termo1:
-          requiredTopics.add('datESP/$login/${device.mac}/termo1/set');
-          requiredTopics.add('datESP/$login/${device.mac}/termo1/temperature1');
-          requiredTopics.add('datESP/$login/${device.mac}/termo1/hum1');
+          requiredTopics.add('datESP/$login/${device.mac}/temper/set');
+          requiredTopics.add('datESP/$login/${device.mac}/temperature1');
+          requiredTopics.add('datESP/$login/${device.mac}/temperature');
+          requiredTopics.add('datESP/$login/${device.mac}/hum1');
            break;
         case DeviceType.led:
           requiredTopics.add('datESP/$login/${device.mac}/led/set');
@@ -239,9 +240,10 @@ class MqttManager {
           ];break;
         case DeviceType.termo1:
            topics = [
-            'datESP/$login/${device.mac}/termo1/temperature1',
-            'datESP/$login/${device.mac}/termo1/hum1',
-            'datESP/$login/${device.mac}/termo1/set',
+            'datESP/$login/${device.mac}/temperature',
+             'datESP/$login/${device.mac}/temperature1',
+            'datESP/$login/${device.mac}/hum1',
+            'datESP/$login/${device.mac}/temper/set',
           ];break;
         case DeviceType.led:
            topics = [
@@ -254,7 +256,7 @@ class MqttManager {
         if (!_activeSubscriptions.contains(topic))
         {
           print('Subscribing to: $topic');
-          await _client!.subscribe(topic, MqttQos.atLeastOnce);
+           _client!.subscribe(topic, MqttQos.atLeastOnce);
           _activeSubscriptions.add(topic);
         }
       }
@@ -283,43 +285,44 @@ class MqttManager {
           // Обработка датчиков температуры/влажности
           if (sensorType == 'temperature1' && jsonData.containsKey('TDS')) {
             final value = jsonData['TDS'].toDouble();
-            print('Parsed temperature: $value');
             onDataReceived(mac, 'temperature', value);
           }
           else if (sensorType == 'temperature1' && jsonData.containsKey('temperature')) {
             final value = jsonData['temperature'].toDouble();
-            print('Parsed temperature: $value');
             onDataReceived(mac, 'temperature', value);
           }
           else if (sensorType == 'hum1' && jsonData.containsKey('humidity')) {
             final value = jsonData['humidity'].toDouble();
-            print('Parsed humidity: $value');
             onDataReceived(mac, 'humidity', value);
           }
           else if (sensorType == 'hum1' && jsonData.containsKey('hum')) {
             final value = jsonData['hum'].toDouble();
-            print('Parsed humidity: $value');
             onDataReceived(mac, 'humidity', value);
           }
           // Обработка термостата (текущая температура)
           else if (sensorType == 'temperature' && jsonData.containsKey('temperature')) {
             final value = jsonData['temperature'].toDouble();
-            print('Parsed termo temperature: $value');
             onDataReceived(mac, 'temperature', value);
           }
           // Обработка состояния (вкл/выкл) для ламп, розеток, реле, LED
-          else if ((sensorType == 'rele' || sensorType == 'socket' || sensorType == 'lamp' || sensorType == 'led') && jsonData.containsKey('state')) {
+          else if ((sensorType == 'rele' || sensorType == 'socket' || sensorType == 'lamp' || sensorType == 'led') && jsonData.containsKey('state'))
+          {
             final state = jsonData['state'] as String;
             final isOn = state.toUpperCase() == 'ON';
-            print('Parsed state: $isOn for device $mac');
             onDataReceived(mac, 'state', isOn ? 1.0 : 0.0);
 
             // Если есть яркость для LED
             if (jsonData.containsKey('value') && jsonData['value'] is num) {
               final brightness = (jsonData['value'] as num).toInt();
-              print('Parsed brightness: $brightness for device $mac');
               onDataReceived(mac, 'brightness', brightness.toDouble());
             }
+
+            // Если есть яркость для LED
+            if (jsonData.containsKey('temperature') && jsonData['temperature'] is num) {
+              final targetTemp = (jsonData['temperature'] as num).toDouble();
+              onDataReceived(mac, 'target_temperature', targetTemp);
+            }
+
           }
 
         } catch (e) {

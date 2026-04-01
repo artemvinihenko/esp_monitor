@@ -17,7 +17,7 @@ class _ManualAddScreenState extends State<ManualAddScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _macController = TextEditingController();
-  final _ipController = TextEditingController();
+  final _ipController = '192.168.4.1';
 
   DeviceType _selectedType = DeviceType.dat;
 
@@ -28,7 +28,6 @@ class _ManualAddScreenState extends State<ManualAddScreen> {
   void dispose() {
     _nameController.dispose();
     _macController.dispose();
-    _ipController.dispose();
     super.dispose();
   }
 
@@ -59,7 +58,7 @@ class _ManualAddScreenState extends State<ManualAddScreen> {
 
       final mqttMac = _macController.text.trim().toUpperCase();
       final deviceName = _nameController.text.trim();
-      final deviceIp = _ipController.text.trim().isEmpty ? 'Неизвестно' : _ipController.text.trim();
+      final deviceIp = _ipController;
 
       final device = DeviceModel(
         id: mqttMac,
@@ -89,7 +88,7 @@ class _ManualAddScreenState extends State<ManualAddScreen> {
         return;
       }
 
-      await _prefs.addDevice(device);
+     // await _prefs.addDevice(device);
 
       if (context.mounted) {
         final provider = Provider.of<DeviceProvider>(context, listen: false);
@@ -101,7 +100,6 @@ class _ManualAddScreenState extends State<ManualAddScreen> {
       // Очищаем форму
       _nameController.clear();
       _macController.clear();
-      _ipController.clear();
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -140,7 +138,7 @@ class _ManualAddScreenState extends State<ManualAddScreen> {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Добавьте устройство, которое уже настроено и подключено к MQTT серверу.',
+            'Добавьте устройство, которое уже настроено и подключено к серверу.',
             style: TextStyle(color: Colors.grey, fontSize: 12),
           ),
           const SizedBox(height: 24),
@@ -214,67 +212,7 @@ class _ManualAddScreenState extends State<ManualAddScreen> {
             },
           ),
           const SizedBox(height: 16),
-
-          // IP адрес (опционально)
-          TextFormField(
-            controller: _ipController,
-            decoration: const InputDecoration(
-              labelText: 'IP адрес (опционально)',
-              hintText: '192.168.1.100',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.dns),
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Информация о формате
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Информация о топиках:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                if (_selectedType == DeviceType.dat) ...[
-                  const Text('• Датчик (температура/влажность)', style: TextStyle(fontSize: 12)),
-                  Text(
-                    '  datESP/{логин}/${_macController}/temperature1',
-                    style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
-                  ),
-                  Text(
-                    '  datESP/{логин}/${_macController}/hum1',
-                    style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
-                  ),
-                ] else ...[
-                  Text(
-                    _selectedType == DeviceType.lamp ? '• Освещение' : '• Розетка',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  Text(
-                    '  Топик состояния: datESP/{логин}/${_macController}/state',
-                    style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
-                  ),
-                  Text(
-                    '  Топик управления: datESP/{логин}/${_macController}/state/set',
-                    style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
-                  ),
-                  const Text(
-                    '  Формат команды: {"state":"ON"} или {"state":"OFF"}',
-                    style: TextStyle(fontSize: 11),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
+//////////////////////////////////
           if (_isLoading)
             const Center(child: CircularProgressIndicator())
           else

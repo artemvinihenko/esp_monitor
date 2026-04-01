@@ -114,7 +114,7 @@ class _QRAddScreenState extends State<QRAddScreen> with WidgetsBindingObserver {
 
       // Проверяем, не существует ли уже устройство
       final existingDevices = await _prefs.getDevices();
-      final exists = existingDevices.any((d) => d.mac == deviceData!['mac']);
+      final exists = existingDevices.any((d) => d.mac == deviceData['mac']);
 
       if (exists) {
         print('Device already exists: ${deviceData['mac']}');
@@ -134,14 +134,14 @@ class _QRAddScreenState extends State<QRAddScreen> with WidgetsBindingObserver {
       );
 
       // Сохраняем токен если есть
-      if (deviceData['token'] != null && deviceData['token']!.isNotEmpty) {
-        await _prefs.saveDeviceToken(device.mac, deviceData['token']!);
-        print('Token saved: ${deviceData['token']}');
-      }
+     // if (deviceData['token'] != null && deviceData['token']!.isNotEmpty) {
+    //    await _prefs.saveDeviceToken(device.mac, deviceData['token']!);
+     //   print('Token saved: ${deviceData['token']}');
+    //  }
 
       // Добавляем устройство в хранилище
-      await _prefs.addDevice(device);
-      print('Device saved to storage');
+     // await _prefs.addDevice(device);
+   //   print('Device saved to storage');
 
       // ОБНОВЛЯЕМ ПРОВАЙДЕР - ЭТО ГЛАВНОЕ!
       if (context.mounted) {
@@ -290,13 +290,10 @@ class _QRAddScreenState extends State<QRAddScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery
-        .of(context)
-        .size
-        .height;
-
-    return Column(
-      children: [
+    final screenHeight = MediaQuery.of(context).size.height;
+    return SingleChildScrollView(
+        child: Column(
+          children: [
         // Статус
         Container(
           padding: const EdgeInsets.all(16),
@@ -438,10 +435,11 @@ class _QRAddScreenState extends State<QRAddScreen> with WidgetsBindingObserver {
             ),
           ),
         ),
-
-      ],
+          ],
+        ),
     );
   }
+
 //////////////////
   Map<String, dynamic>? _extractWithRegex(String data) {
     print('Extracting with regex from: $data');
@@ -652,36 +650,5 @@ class _QRAddScreenState extends State<QRAddScreen> with WidgetsBindingObserver {
     return cleaned;
   }
 /////////////////////////////////////////////////////
-  String _preprocessQrData(String data) {
-    // Удаляем непечатные символы в начале и конце
-    String result = data.trim();
-
-    // Удаляем BOM
-    if (result.startsWith('\uFEFF')) {
-      result = result.substring(1);
-    }
-
-    // Удаляем нулевые символы
-    result = result.replaceAll('\0', '');
-
-    // Если строка начинается не с '{', ищем первый '{'
-    if (!result.startsWith('{')) {
-      final firstBrace = result.indexOf('{');
-      if (firstBrace != -1) {
-        result = result.substring(firstBrace);
-      }
-    }
-
-    // Если строка заканчивается не на '}', ищем последний '}'
-    if (!result.endsWith('}')) {
-      final lastBrace = result.lastIndexOf('}');
-      if (lastBrace != -1) {
-        result = result.substring(0, lastBrace + 1);
-      }
-    }
-
-    return result;
-  }
-
 
 }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../services/preferences_manager.dart';
 import '../screens/smart_config_screen.dart';
 import '../screens/manual_add_screen.dart';
 import '../screens/qr_add_screen.dart';
@@ -13,52 +12,16 @@ class AddDeviceTab extends StatefulWidget {
 
 class _AddDeviceTabState extends State<AddDeviceTab> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final _prefs = PreferencesManager();
-  final _loginController = TextEditingController();
-  final _passwordController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);  // 3 вкладки
-    _loadCredentials();
-  }
-
-  Future<void> _loadCredentials() async {
-    final credentials = await _prefs.getMqttCredentials();
-    _loginController.text = credentials.login;
-    _passwordController.text = credentials.password;
-  }
-
-  Future<void> _saveMqttCredentials() async {
-    final login = _loginController.text.trim();
-    final password = _passwordController.text.trim();
-
-    if (login.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Введите логин MQTT')),
-      );
-      return;
-    }
-
-    if (password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Введите пароль MQTT')),
-      );
-      return;
-    }
-
-    await _prefs.saveMqttCredentials(login, password);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('MQTT настройки сохранены')),
-    );
   }
 
   @override
   void dispose() {
     _tabController.dispose();
-    _loginController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
@@ -66,60 +29,6 @@ class _AddDeviceTabState extends State<AddDeviceTab> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // MQTT настройки вверху
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade50,
-            border: Border(
-              bottom: BorderSide(color: Colors.grey.shade200),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'MQTT настройки',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _loginController,
-                decoration: const InputDecoration(
-                  labelText: 'Логин MQTT',
-                  hintText: 'zavr',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.person),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Пароль MQTT',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.lock),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _saveMqttCredentials,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey.shade300,
-                    foregroundColor: Colors.black,
-                  ),
-                  child: const Text('Сохранить MQTT настройки'),
-                ),
-              ),
-            ],
-          ),
-        ),
-
         // Вкладки для добавления устройств
         Expanded(
           child: Column(
@@ -156,14 +65,6 @@ class _AddDeviceTabState extends State<AddDeviceTab> with SingleTickerProviderSt
                             width: double.infinity,
                             child: ElevatedButton.icon(
                               onPressed: () {
-                                final login = _loginController.text.trim();
-                                final password = _passwordController.text.trim();
-                                if (login.isEmpty || password.isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Сначала сохраните MQTT настройки')),
-                                  );
-                                  return;
-                                }
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -176,6 +77,28 @@ class _AddDeviceTabState extends State<AddDeviceTab> with SingleTickerProviderSt
                               style: ElevatedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                               ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.info, color: Colors.blue),
+                                SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Убедитесь, что устройство в режиме SmartConfig. '
+                                        'Для этого удерживайте кнопку на нем более 10 секунд '
+                                        'для сброса настроек до заводских',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],

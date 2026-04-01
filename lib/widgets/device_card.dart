@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import '../models/device_model.dart';
 import '../services/mqtt_manager.dart';
 
-class DeviceCard extends StatelessWidget {
+class DeviceCard extends StatefulWidget {
   final DeviceModel device;
   final VoidCallback onDelete;
   final VoidCallback onRefresh;
@@ -19,85 +19,131 @@ class DeviceCard extends StatelessWidget {
   });
 
   @override
+  State<DeviceCard> createState() => _DeviceCardState();
+}
+
+class _DeviceCardState extends State<DeviceCard> {
+  // Локальные переменные для мгновенного обновления UI
+  double? _localTargetTemp;
+  bool? _localIsOn;
+  int? _localBrightness;
+
+  @override
+  void initState() {
+    super.initState();
+    _initLocalValues();
+  }
+
+  void _initLocalValues() {
+    _localTargetTemp = widget.device.targetTemperature?.toDouble() ?? 20;
+    _localIsOn = widget.device.isOn ?? false;
+    _localBrightness = widget.device.brightness ?? 0;
+  }
+
+  @override
+  void didUpdateWidget(DeviceCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Обновляем локальные данные при изменении device (например, при получении MQTT)
+    if (widget.device.targetTemperature != oldWidget.device.targetTemperature) {
+      _localTargetTemp = widget.device.targetTemperature?.toDouble() ?? 20;
+    }
+    if (widget.device.isOn != oldWidget.device.isOn) {
+      _localIsOn = widget.device.isOn ?? false;
+    }
+    if (widget.device.brightness != oldWidget.device.brightness) {
+      _localBrightness = widget.device.brightness ?? 0;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final lastUpdate = device.lastUpdate > 0
-        ? DateFormat('HH:mm:ss').format(DateTime.fromMillisecondsSinceEpoch(device.lastUpdate))
+    final lastUpdate = widget.device.lastUpdate > 0
+        ? DateFormat('HH:mm:ss').format(DateTime.fromMillisecondsSinceEpoch(widget.device.lastUpdate))
         : 'нет данных';
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Верхняя строка: иконка, имя, статус
             Row(
               children: [
                 Text(
-                  '${device.type.icon} ',
-                  style: const TextStyle(fontSize: 20),
+                  '${widget.device.type.icon} ',
+                  style: const TextStyle(fontSize: 18),
                 ),
                 Expanded(
                   child: Text(
-                    device.name,
+                    widget.device.name,
                     style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: device.isOnline ? Colors.green : Colors.grey,
-                    borderRadius: BorderRadius.circular(12),
+                    color: widget.device.isOnline ? Colors.green : Colors.grey,
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
-                    device.isOnline ? '● Онлайн' : '○ Офлайн',
+                    widget.device.isOnline ? '● Онлайн' : '○ Офлайн',
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 10,
                       color: Colors.white,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
+
+            // MAC адрес
             Text(
-              device.mac,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              widget.device.mac,
+              style: const TextStyle(fontSize: 10, color: Colors.grey),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
 
             // Отображение данных в зависимости от типа устройства
-            if (device.type == DeviceType.dat) ...[
-              _buildSensorCard(),
-            ] else if (device.type == DeviceType.termo1) ...[
-              _buildTermostatCard(),
-            ] else if (device.type == DeviceType.led) ...[
-              _buildLedCard(),
-            ]  else if (device.type == DeviceType.lamp) ...[
-              _buildSwitchCard(),
-            ] else if (device.type == DeviceType.roz) ...[
-              _buildSwitchCard(),
-            ] else ...[
-              _buildSwitchCard(),
+            if (widget.device.type == DeviceType.dat) ...[
+              _buildCompactSensorCard(),
+            ] else if (widget.device.type == DeviceType.termo1) ...[
+              _buildCompactTermostatCard(),
+            ] else if (widget.device.type == DeviceType.led) ...[
+              _buildCompactLedCard(),
+            ] else if (widget.device.type == DeviceType.lamp ||
+                widget.device.type == DeviceType.roz ||
+                widget.device.type == DeviceType.rele) ...[
+              _buildCompactSwitchCard(),
             ],
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
+
+            // Нижняя строка: время обновления и кнопки
             Row(
               children: [
                 Text(
                   'обн: $lastUpdate',
-                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                  style: const TextStyle(fontSize: 9, color: Colors.grey),
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.refresh, size: 20),
+                  icon: const Icon(Icons.refresh, size: 18),
                   onPressed: () {
-                    // Отправляем запрос на получение данных
-                    if (mqttManager != null && device.login.isNotEmpty) {
-                      mqttManager!.pollDevice(device.login, device.mac);
+                    if (widget.mqttManager != null && widget.device.login.isNotEmpty) {
+                      widget.mqttManager!.pollDevice(widget.device.login, widget.device.mac);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Запрос данных...'),
@@ -107,11 +153,16 @@ class DeviceCard extends StatelessWidget {
                     }
                   },
                   tooltip: 'Обновить',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
+                const SizedBox(width: 8),
                 IconButton(
-                  icon: const Icon(Icons.delete, size: 20),
-                  onPressed: onDelete,
+                  icon: const Icon(Icons.delete, size: 18),
+                  onPressed: widget.onDelete,
                   tooltip: 'Удалить',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
               ],
             ),
@@ -121,24 +172,23 @@ class DeviceCard extends StatelessWidget {
     );
   }
 
-  Widget _buildSensorCard() {
+  // Компактная карточка датчика
+  Widget _buildCompactSensorCard() {
     return Row(
       children: [
         Expanded(
-          child: _SensorCard(
-            title: 'Температура',
-            value: device.temperature != null
-                ? '${device.temperature!.toStringAsFixed(1)}°C'
+          child: _CompactSensorValue(
+            value: widget.device.temperature != null
+                ? '${widget.device.temperature!.toStringAsFixed(1)}°C'
                 : '---°C',
             icon: Icons.thermostat,
           ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 12),
         Expanded(
-          child: _SensorCard(
-            title: 'Влажность',
-            value: device.humidity != null
-                ? '${device.humidity!.toStringAsFixed(1)}%'
+          child: _CompactSensorValue(
+            value: widget.device.humidity != null
+                ? '${widget.device.humidity!.toStringAsFixed(1)}%'
                 : '---%',
             icon: Icons.water_drop,
           ),
@@ -147,92 +197,172 @@ class DeviceCard extends StatelessWidget {
     );
   }
 
-  Widget _buildSwitchCard() {
-    return Center(
-      child: _ControlCard(
-        title: device.type.displayName,
-        isOn: device.isOn ?? false,
-        onToggle: (value) => _sendCommand({'state': value ? 'ON' : 'OFF'}),
-        icon: _getControlIcon(),
-      ),
+  // Компактная карточка переключателя
+  Widget _buildCompactSwitchCard() {
+    return Row(
+      children: [
+        Expanded(
+          child: _CompactSwitchControl(
+            title: widget.device.type.displayName,
+            isOn: widget.device.isOn ?? false,
+            onToggle: (value) => _sendCommand({'state': value ? 'ON' : 'OFF'}),
+            icon: _getControlIcon(),
+          ),
+        ),
+      ],
     );
-  }///end rele lamp roz
+  }
 
-  Widget _buildLedCard() {
+  // Компактная LED карточка
+  Widget _buildCompactLedCard() {
     return Column(
       children: [
-        _ControlCard(
-          title: device.type.displayName,
-          isOn: device.isOn ?? false,
-          onToggle: (value) => _sendCommand({'state': value ? 'ON' : 'OFF'}),
-          icon: Icons.lightbulb,
-        ),
-        const SizedBox(height: 12),
         Row(
           children: [
-            const Icon(Icons.brightness_6, size: 20),
+            Expanded(
+              child: _CompactSwitchControl(
+                title: widget.device.type.displayName,
+                isOn: widget.device.isOn ?? false,
+                onToggle: (value) => _sendCommand({'state': value ? 'ON' : 'OFF'}),
+                icon: Icons.lightbulb,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            const Icon(Icons.brightness_6, size: 16, color: Colors.grey),
             const SizedBox(width: 8),
             Expanded(
               child: Slider(
-                value: (device.brightness ?? 0).toDouble(),
+                value: (_localBrightness ?? widget.device.brightness ?? 0).toDouble(),
                 min: 0,
                 max: 100,
                 divisions: 100,
-                label: '${device.brightness ?? 0}%',
+                label: '${_localBrightness ?? widget.device.brightness ?? 0}%',
                 onChanged: (value) {
+                  setState(() {
+                    _localBrightness = value.toInt();
+                  });
+                },
+                onChangeEnd: (value) {
+                  final newValue = value.toInt();
                   _sendCommand({
-                    'state': (device.isOn ?? false) ? 'ON' : 'OFF',
-                    'value': value.toInt(),
+                    'state': (widget.device.isOn ?? false) ? 'ON' : 'OFF',
+                    'value': newValue,
                   });
                 },
               ),
             ),
-            Text('${device.brightness ?? 0}%'),
+            Text(
+              '${_localBrightness ?? widget.device.brightness ?? 0}%',
+              style: const TextStyle(fontSize: 12),
+            ),
           ],
         ),
       ],
     );
-  }///end led lamp
+  }
 
-  Widget _buildTermostatCard() {
+  // Компактная термостат карточка
+  Widget _buildCompactTermostatCard() {
     return Column(
       children: [
-        _SensorCard(
-          title: 'Текущая температура',
-          value: device.temperature != null
-              ? '${device.temperature!.toStringAsFixed(1)}°C'
-              : '---°C',
-          icon: Icons.thermostat,
-        ),
-        const SizedBox(height: 12),
+        // Строка с текущей и установленной температурой + кнопка
         Row(
           children: [
-            const Icon(Icons.settings, size: 20),
+            Expanded(
+              child: _CompactSensorValue(
+                title: 'Текущая',
+                value: widget.device.temperature != null
+                    ? '${widget.device.temperature!.toStringAsFixed(1)}°C'
+                    : '---°C',
+                icon: Icons.thermostat,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _CompactSensorValue(
+                title: 'Уст',
+                value: '${(_localTargetTemp ?? widget.device.targetTemperature ?? 20).toInt()}°C',
+                icon: Icons.settings,
+              ),
+            ),
+            // Кнопка вкл/выкл
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: (_localIsOn ?? widget.device.isOn ?? false) ? Colors.green.shade50 : Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    (_localIsOn ?? widget.device.isOn ?? false) ? Icons.power_settings_new : Icons.power_off,
+                    size: 16,
+                    color: (_localIsOn ?? widget.device.isOn ?? false) ? Colors.green : Colors.grey,
+                  ),
+                  const SizedBox(width: 4),
+                  Switch(
+                    value: _localIsOn ?? widget.device.isOn ?? false,
+                    onChanged: (value) {
+                      setState(() {
+                        _localIsOn = value;
+                      });
+                      _sendCommand({
+                        'state': value ? 'ON' : 'OFF',
+                        'value': (_localTargetTemp ?? widget.device.targetTemperature ?? 20).toInt(),
+                      });
+                    },
+                    activeColor: Colors.green,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        // Слайдер для установки температуры
+        Row(
+          children: [
+            const Icon(Icons.thermostat, size: 16, color: Colors.orange),
             const SizedBox(width: 8),
             Expanded(
               child: Slider(
-                value: device.targetTemperature ?? 20.0,
-                min: 5,
-                max: 35,
-                divisions: 60,
-                label: '${device.targetTemperature ?? 20}°C',
+                value: _localTargetTemp ?? widget.device.targetTemperature?.toDouble() ?? 20,
+                min: 0,
+                max: 120,
+                divisions: 120,
+                label: '${(_localTargetTemp ?? widget.device.targetTemperature ?? 20).toInt()}°C',
                 onChanged: (value) {
+                  setState(() {
+                    _localTargetTemp = value;
+                  });
+                },
+                onChangeEnd: (value) {
+                  final newValue = value.toInt();
                   _sendCommand({
-                    'state': (device.isOn ?? false) ? 'ON' : 'OFF',
-                    'value': value.toInt(),
+                    'state': (_localIsOn ?? widget.device.isOn ?? false) ? 'ON' : 'OFF',
+                    'value': newValue,
                   });
                 },
               ),
             ),
-            Text('${device.targetTemperature ?? 20}°C'),
+            Text(
+              '${(_localTargetTemp ?? widget.device.targetTemperature ?? 20).toInt()}°C',
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            ),
           ],
         ),
       ],
     );
-  }////end termo1
+  }
 
   IconData _getControlIcon() {
-    switch (device.type) {
+    switch (widget.device.type) {
       case DeviceType.lamp:
         return Icons.lightbulb;
       case DeviceType.roz:
@@ -245,50 +375,52 @@ class DeviceCard extends StatelessWidget {
   }
 
   void _sendCommand(Map<String, dynamic> command) {
-    final topic = device.getControlTopic(device.login);
+    final topic = widget.device.getControlTopic(widget.device.login);
     if (topic == null) {
-      print('No control topic for device type: ${device.type}');
+      print('No control topic for device type: ${widget.device.type}');
       return;
     }
 
     final payload = jsonEncode(command);
     print('Sending command to $topic: $payload');
-    mqttManager?.publish(topic, payload);
+    widget.mqttManager?.publish(topic, payload);
   }
 }
 
-// Остальные классы остаются без изменений
-class _SensorCard extends StatelessWidget {
-  final String title;
+// Компактный виджет для отображения значения датчика
+class _CompactSensorValue extends StatelessWidget {
   final String value;
   final IconData icon;
+  final String? title;
 
-  const _SensorCard({
-    required this.title,
+  const _CompactSensorValue({
     required this.value,
     required this.icon,
+    this.title,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
       ),
-      child: Column(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 24, color: Colors.blue),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-          const SizedBox(height: 4),
+          Icon(icon, size: 14, color: Colors.blue),
+          const SizedBox(width: 4),
+          if (title != null) ...[
+            Text(
+              '$title: ',
+              style: const TextStyle(fontSize: 11, color: Colors.grey),
+            ),
+          ],
           Text(
             value,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
           ),
         ],
       ),
@@ -296,13 +428,14 @@ class _SensorCard extends StatelessWidget {
   }
 }
 
-class _ControlCard extends StatelessWidget {
+// Компактный виджет для управления переключателем
+class _CompactSwitchControl extends StatelessWidget {
   final String title;
   final bool isOn;
   final ValueChanged<bool> onToggle;
   final IconData icon;
 
-  const _ControlCard({
+  const _CompactSwitchControl({
     required this.title,
     required this.isOn,
     required this.onToggle,
@@ -312,36 +445,29 @@ class _ControlCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       decoration: BoxDecoration(
         color: isOn ? Colors.green.shade50 : Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
       ),
-      child: Column(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(
-            icon,
-            size: 40,
-            color: isOn ? Colors.green : Colors.grey,
+          Row(
+            children: [
+              Icon(icon, size: 16, color: isOn ? Colors.green : Colors.grey),
+              const SizedBox(width: 6),
+              Text(
+                title,
+                style: const TextStyle(fontSize: 12),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
           Switch(
             value: isOn,
             onChanged: onToggle,
             activeColor: Colors.green,
-          ),
-          Text(
-            isOn ? 'ВКЛЮЧЕНО' : 'ВЫКЛЮЧЕНО',
-            style: TextStyle(
-              fontSize: 12,
-              color: isOn ? Colors.green : Colors.grey,
-              fontWeight: FontWeight.bold,
-            ),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ],
       ),

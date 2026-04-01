@@ -26,14 +26,49 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     super.dispose();
   }
 
+  Future<void> _logout() async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Выход'),
+        content: const Text('Вы уверены, что хотите выйти?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Отмена'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Выйти', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout == true) {
+      final provider = Provider.of<DeviceProvider>(context, listen: false);
+      await provider.disconnectMqtt();
+
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<DeviceProvider>(
       builder: (context, provider, child) {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('ESP8266 Monitor'),
+            title: const Text('IOT мониторинг'),
             actions: [
+              // Кнопка выхода
+              IconButton(
+                icon: const Icon(Icons.logout),
+                tooltip: 'Выйти',
+                onPressed: _logout,
+              ),
               // Кнопка переподключения MQTT
               IconButton(
                 icon: const Icon(Icons.sync),

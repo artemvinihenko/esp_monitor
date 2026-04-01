@@ -69,6 +69,49 @@ class DeviceProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> checkCredentials() async {
+    final credentials = await _prefs.getMqttCredentials();
+    return credentials.login.isNotEmpty && credentials.password.isNotEmpty;
+  }
+
+  Future<bool> testMqttConnection() async {
+    final credentials = await _prefs.getMqttCredentials();
+    if (credentials.login.isEmpty || credentials.password.isEmpty) {
+      return false;
+    }
+
+    final completer = Completer<bool>();
+
+    final testManager = MqttManager(
+      onDataReceived: (mac, type, value) {},
+      onConnectionStateChanged: (connected) {
+        if (!completer.isCompleted) {
+          completer.complete(connected);
+        }
+      },
+    );
+
+    try {
+      final connected = await testManager.connect(credentials.login, credentials.password, []);
+      if (connected) {
+        await Future.delayed(const Duration(seconds: 1));
+        await testManager.disconnect();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    } finally {
+      await testManager.disconnect();
+    }
+  }
+
+  Future<void> disconnectMqtt() async {
+    await _mqttManager?.disconnect();
+    _isMqttConnected = false;
+    notifyListeners();
+  }
+
   Future<void> _connectMqtt() async {
     final credentials = await _prefs.getMqttCredentials();
     if (credentials.login.isEmpty || credentials.password.isEmpty) {
@@ -203,6 +246,16 @@ class DeviceProvider extends ChangeNotifier {
           );
           print('Updated brightness for ${device.name}: ${value.toInt()}%');
           break;
+
+        case 'target_temperature':
+          device = device.copyWith(
+            targetTemperature: value,
+            lastUpdate: now,
+            isOnline: true,
+          );
+          print('Updated target temperature for ${device.name}: $value°C');
+          break;
+
       }
 
       _devices[index] = device;
@@ -215,7 +268,7 @@ class DeviceProvider extends ChangeNotifier {
 
   void _startPeriodicUpdate() {
     _updateTimer?.cancel();
-    _updateTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+    _updateTimer = Timer.periodic(const Duration(seconds: 60), (timer) {
       _updateOnlineStatus();
     });
   }
