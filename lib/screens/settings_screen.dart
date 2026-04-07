@@ -4,9 +4,9 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/work_manager_service.dart';
-import '../providers/device_provider.dart';
-import '../models/device_model.dart';
 import 'debug_tab.dart';
+import '../providers/theme_provider.dart';
+
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -22,17 +22,13 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
   bool _hasNotificationPermission = false;
   bool _hasWifiPermission = false;
   int _pollingInterval = 15;
-  
-  // Для выбора датчика уведомления
-  String _selectedDeviceMac = '';
-  String _selectedDataType = 'temperature';
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _checkPermissions();
-    _loadNotificationSettings();
+    _loadPollingInterval();
   }
 
   @override
@@ -41,32 +37,21 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     super.dispose();
   }
 
-  Future<void> _loadNotificationSettings() async {
-    // Загружаем сохраненные настройки уведомления
+  Future<void> _loadPollingInterval() async {
     final prefs = await SharedPreferences.getInstance();
+    final interval = prefs.getInt('polling_interval') ?? 15;
     setState(() {
-      _selectedDeviceMac = prefs.getString('notification_device_mac') ?? '';
-      _selectedDataType = prefs.getString('notification_device_type') ?? 'temperature';
+      _pollingInterval = interval;
     });
   }
 
-  Future<void> _saveNotificationSettings(String mac, String dataType) async {
+  Future<void> _savePollingInterval(int minutes) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('notification_device_mac', mac);
-    await prefs.setString('notification_device_type', dataType);
+    await prefs.setInt('polling_interval', minutes);
+    await WorkManagerService.setPollingInterval(minutes);
     setState(() {
-      _selectedDeviceMac = mac;
-      _selectedDataType = dataType;
+      _pollingInterval = minutes;
     });
-    
-    // Обновляем уведомление
-    await WorkManagerService.runNow();
-    
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Настройки уведомления сохранены')),
-      );
-    }
   }
 
   Future<void> _checkPermissions() async {
@@ -105,6 +90,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     }
   }
 
+
   void _showInfoDialog(String title, String message) {
     showDialog(
       context: context,
@@ -121,115 +107,10 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     );
   }
 
-  String _getDeviceName(String mac) {
-    final provider = Provider.of<DeviceProvider>(context, listen: false);
-    final device = provider.devices.firstWhere(
-      (d) => d.mac == mac,
-      orElse: () => DeviceModel(
-        id: '', name: 'Неизвестно', mac: '', type: DeviceType.dat, ip: '', login: '',
-      ),
-    );
-    return device.name;
-  }
-
-  void _showDeviceSelector() {
-    final provider = Provider.of<DeviceProvider>(context, listen: false);
-    
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => SizedBox(
-        height: 400,
-        child: Column(
-          children: [
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                'Выберите устройство для отображения',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-            const Divider(),
-            Expanded(
-              child: ListView.builder(
-                itemCount: provider.devices.length,
-                itemBuilder: (context, index) {
-                  final device = provider.devices[index];
-                  return ListTile(
-                    leading: Text(device.type.icon),
-                    title: Text(device.name),
-                    subtitle: Text(device.mac),
-                    trailing: device.mac == _selectedDeviceMac
-                        ? const Icon(Icons.check, color: Colors.green)
-                        : null,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _showDataTypeSelector(device.mac);
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showDataTypeSelector(String mac) {
-    final provider = Provider.of<DeviceProvider>(context, listen: false);
-    final device = provider.devices.firstWhere((d) => d.mac == mac);
-    
-    final List<Map<String, String>> options = [];
-    
-    if (device.type == DeviceType.dat) {
-      options.add({'type': 'temperature', 'name': '🌡️ Температура'});
-      options.add({'type': 'humidity', 'name': '💧 Влажность'});
-    } else if (device.type == DeviceType.termo1) {
-      options.add({'type': 'temperature', 'name': '🌡️ Температура'});
-    } else {
-      options.add({'type': 'state', 'name': '⚡ Состояние (ON/OFF)'});
-    }
-    
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => SizedBox(
-        height: 300,
-        child: Column(
-          children: [
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                'Выберите данные для отображения',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-            const Divider(),
-            Expanded(
-              child: ListView.builder(
-                itemCount: options.length,
-                itemBuilder: (context, index) {
-                  final option = options[index];
-                  return ListTile(
-                    title: Text(option['name']!),
-                    trailing: option['type'] == _selectedDataType
-                        ? const Icon(Icons.check, color: Colors.green)
-                        : null,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _saveNotificationSettings(mac, option['type']!);
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Настройки'),
@@ -255,13 +136,13 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                 color: Colors.orange.shade50,
                 child: Column(
                   children: [
-                    const ListTile(
-                      leading: Icon(Icons.warning_amber, color: Colors.orange),
-                      title: Text(
+                    ListTile(
+                      leading: const Icon(Icons.warning_amber, color: Colors.orange),
+                      title: const Text(
                         'Важно для фоновой работы!',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      subtitle: Text(
+                      subtitle: const Text(
                         'На некоторых телефонах (Xiaomi, Huawei, Oppo, TECNO) нужно разрешить автозапуск в настройках системы',
                       ),
                     ),
@@ -279,35 +160,79 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
               
               const SizedBox(height: 16),
               
-              // Секция "Уведомление в статус-баре"
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: const Text(
-                  'УВЕДОМЛЕНИЕ В СТАТУС-БАРЕ',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey),
-                ),
-              ),
-              
+              // Секция "Внешний вид"
               Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: Column(
-                  children: [
-                    ListTile(
-                      leading: const Icon(Icons.notifications, color: Colors.blue),
-                      title: const Text('Показывать датчик'),
-                      subtitle: Text(_selectedDeviceMac.isEmpty 
-                          ? 'Не выбран' 
-                          : '${_getDeviceName(_selectedDeviceMac)} - ${_getDataTypeName(_selectedDataType)}'),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: _showDeviceSelector,
-                    ),
-                  ],
+  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+  child: Column(
+    children: [
+      ListTile(
+        leading: const Icon(Icons.brightness_4),
+        title: const Text('Тема оформления'),
+        subtitle: Text(_getThemeName(themeProvider.currentTheme)),
+        trailing: DropdownButton<AppTheme>(
+          value: themeProvider.currentTheme,
+          items: const [
+            DropdownMenuItem(
+              value: AppTheme.light,
+              child: Text('Светлая'),
+            ),
+            DropdownMenuItem(
+              value: AppTheme.dark,
+              child: Text('Темная'),
+            ),
+            DropdownMenuItem(
+              value: AppTheme.amethyst,
+              child: Text('Аметист'),
+            ),
+          ],
+          onChanged: (value) {
+            if (value != null) {
+              themeProvider.setTheme(value);
+            }
+          },
+        ),
+      ),
+      if (themeProvider.isAmethyst)
+        Container(
+          padding: const EdgeInsets.all(12),
+          margin: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.black,
+                Colors.deepPurple.shade900,
+                Colors.deepPurple.shade700,
+              ],
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '✨ Аметист тема',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white70,
                 ),
               ),
+              SizedBox(height: 4),
+              Text(
+                'Черно-фиолетовая тема с градиентным фоном',
+                style: TextStyle(fontSize: 12, color: Colors.white54),
+              ),
+            ],
+          ),
+        ),
+    ],
+  ),
+),
               
               const SizedBox(height: 16),
               
-              // Секция "Периодичность опроса"
+              // Секция "Фоновой опрос"
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: const Text(
@@ -334,10 +259,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                     ],
                     onChanged: (value) async {
                       if (value != null) {
-                        setState(() {
-                          _pollingInterval = value;
-                        });
-                        await WorkManagerService.setPollingInterval(value);
+                        await _savePollingInterval(value);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Интервал опроса изменён на $value минут')),
                         );
@@ -365,7 +287,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                   subtitle: const Text('Позволяет приложению работать в фоне без ограничений'),
                   value: _isBatteryOptimizationIgnored,
                   onChanged: (_) => _requestBatteryOptimization(),
-                  activeThumbColor: Colors.green,
+                  activeColor: Colors.green,
                 ),
               ),
 
@@ -392,7 +314,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                       _hasNotificationPermission = status.isGranted;
                     });
                   },
-                  activeThumbColor: Colors.green,
+                  activeColor: Colors.green,
                 ),
               ),
 
@@ -419,7 +341,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                       _hasWifiPermission = status.isGranted;
                     });
                   },
-                  activeThumbColor: Colors.green,
+                  activeColor: Colors.green,
                 ),
               ),
 
@@ -433,21 +355,20 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                   color: Colors.blue.shade50,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Column(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'ℹ️ Для стабильной фоновой работы:',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    SizedBox(height: 8),
-                    Text(
+                    const SizedBox(height: 8),
+                    const Text(
                       '1. Нажмите "Открыть настройки приложения" и разрешите все разрешения\n'
                       '2. Включите "Игнорировать оптимизацию батареи"\n'
                       '3. Разрешите уведомления\n'
-                      '4. Выберите датчик для отображения в статус-баре\n'
-                      '5. Настройте интервал опроса\n'
-                      '6. Для диагностики перейдите на вкладку "Отладка"',
+                      '4. Настройте интервал опроса\n'
+                      '5. Для диагностики перейдите на вкладку "Отладка"',
                       style: TextStyle(fontSize: 12),
                     ),
                   ],
@@ -463,16 +384,15 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     );
   }
   
-  String _getDataTypeName(String type) {
-    switch (type) {
-      case 'temperature':
-        return 'Температура';
-      case 'humidity':
-        return 'Влажность';
-      case 'state':
-        return 'Состояние';
-      default:
-        return 'Температура';
-    }
+  String _getThemeName(AppTheme theme) {
+  switch (theme) {
+    case AppTheme.light:
+      return 'Светлая';
+    case AppTheme.dark:
+      return 'Темная';
+    case AppTheme.amethyst:
+      return 'Аметист';
   }
+}
+
 }

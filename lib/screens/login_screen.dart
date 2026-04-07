@@ -204,6 +204,19 @@ class _LoginScreenState extends State<LoginScreen> {
                           ],
                         ),
                       ),
+                      Container(
+  width: 100,
+  height: 100,
+  decoration: BoxDecoration(
+    color: Theme.of(context).primaryColor.withOpacity(0.1),
+    shape: BoxShape.circle,
+  ),
+  child: Icon(
+    Icons.sensors,
+    size: 50,
+    color: Theme.of(context).primaryColor,
+  ),
+),
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _loginController,

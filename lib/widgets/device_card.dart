@@ -25,7 +25,6 @@ class DeviceCard extends StatefulWidget {
 }
 
 class _DeviceCardState extends State<DeviceCard> {
-  // Локальные переменные для мгновенного обновления UI
   double? _localTargetTemp;
   bool? _localIsOn;
   int? _localBrightness;
@@ -45,7 +44,6 @@ class _DeviceCardState extends State<DeviceCard> {
   @override
   void didUpdateWidget(DeviceCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Обновляем локальные данные при изменении device (например, при получении MQTT)
     if (widget.device.targetTemperature != oldWidget.device.targetTemperature) {
       _localTargetTemp = widget.device.targetTemperature?.toDouble() ?? 20;
     }
@@ -74,7 +72,6 @@ class _DeviceCardState extends State<DeviceCard> {
             length: widget.device.type == DeviceType.dat ? 2 : 1,
             child: Column(
               children: [
-                // Handle
                 Container(
                   margin: const EdgeInsets.only(top: 12),
                   width: 40,
@@ -85,7 +82,6 @@ class _DeviceCardState extends State<DeviceCard> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                // Заголовок
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
@@ -106,7 +102,6 @@ class _DeviceCardState extends State<DeviceCard> {
                     ],
                   ),
                 ),
-                // Вкладки для датчика (температура и влажность)
                 if (widget.device.type == DeviceType.dat)
                   const TabBar(
                     tabs: [
@@ -115,25 +110,24 @@ class _DeviceCardState extends State<DeviceCard> {
                     ],
                   ),
                 const SizedBox(height: 8),
-                // График
                 Expanded(
                   child: widget.device.type == DeviceType.dat
                       ? TabBarView(
-                    children: [
-                      ChartScreen(
-                        device: widget.device,
-                        dataType: 'temperature',
-                      ),
-                      ChartScreen(
-                        device: widget.device,
-                        dataType: 'humidity',
-                      ),
-                    ],
-                  )
+                          children: [
+                            ChartScreen(
+                              device: widget.device,
+                              dataType: 'temperature',
+                            ),
+                            ChartScreen(
+                              device: widget.device,
+                              dataType: 'humidity',
+                            ),
+                          ],
+                        )
                       : ChartScreen(
-                    device: widget.device,
-                    dataType: 'temperature',
-                  ),
+                          device: widget.device,
+                          dataType: 'temperature',
+                        ),
                 ),
               ],
             ),
@@ -145,6 +139,7 @@ class _DeviceCardState extends State<DeviceCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final lastUpdate = widget.device.lastUpdate > 0
         ? DateFormat('HH:mm:ss').format(DateTime.fromMillisecondsSinceEpoch(widget.device.lastUpdate))
         : 'нет данных';
@@ -159,7 +154,6 @@ class _DeviceCardState extends State<DeviceCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Верхняя строка: иконка, имя, статус
             Row(
               children: [
                 Text(
@@ -194,45 +188,46 @@ class _DeviceCardState extends State<DeviceCard> {
               ],
             ),
             const SizedBox(height: 2),
-
-            // MAC адрес
             Text(
               widget.device.mac,
-              style: const TextStyle(fontSize: 10, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 10,
+                color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 8),
 
-            // Отображение данных в зависимости от типа устройства
             if (widget.device.type == DeviceType.dat) ...[
-              _buildCompactSensorCard(),
+              _buildCompactSensorCard(isDark),
             ] else if (widget.device.type == DeviceType.termo1) ...[
-              _buildCompactTermostatCard(),
+              _buildCompactTermostatCard(isDark),
             ] else if (widget.device.type == DeviceType.led) ...[
-              _buildCompactLedCard(),
+              _buildCompactLedCard(isDark),
             ] else if (widget.device.type == DeviceType.lamp ||
                 widget.device.type == DeviceType.rele) ...[
-              _buildCompactSwitchCard(),
-            ]else if(widget.device.type == DeviceType.roz)...[
-              _buildSocketCard(),
-            ]else if (widget.device.type == DeviceType.sauna) ...[
-               _buildSaunaCard(),
-             ],
+              _buildCompactSwitchCard(isDark),
+            ] else if (widget.device.type == DeviceType.roz) ...[
+              _buildSocketCard(isDark),
+            ] else if (widget.device.type == DeviceType.sauna) ...[
+              _buildSaunaCard(isDark),
+            ],
             const SizedBox(height: 8),
 
-            // Нижняя строка: время обновления и кнопки
             Row(
               children: [
                 Text(
                   'обн: $lastUpdate',
-                  style: const TextStyle(fontSize: 9, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                  ),
                 ),
                 const Spacer(),
-                // Кнопка графика (только для датчиков и термостата)
                 if (widget.device.type == DeviceType.dat || widget.device.type == DeviceType.termo1)
                   IconButton(
-                    icon: const Icon(Icons.show_chart, size: 18),
+                    icon: Icon(Icons.show_chart, size: 18, color: isDark ? Colors.grey.shade300 : Colors.grey.shade700),
                     onPressed: () {
                       _showChartDialog(context);
                     },
@@ -241,7 +236,7 @@ class _DeviceCardState extends State<DeviceCard> {
                     constraints: const BoxConstraints(),
                   ),
                 IconButton(
-                  icon: const Icon(Icons.refresh, size: 18),
+                  icon: Icon(Icons.refresh, size: 18, color: isDark ? Colors.grey.shade300 : Colors.grey.shade700),
                   onPressed: () {
                     if (widget.mqttManager != null && widget.device.login.isNotEmpty) {
                       widget.mqttManager!.pollDevice(widget.device.login, widget.device.mac);
@@ -253,7 +248,7 @@ class _DeviceCardState extends State<DeviceCard> {
                 ),
                 const SizedBox(width: 4),
                 IconButton(
-                  icon: const Icon(Icons.delete, size: 18),
+                  icon: Icon(Icons.delete, size: 18, color: isDark ? Colors.grey.shade300 : Colors.grey.shade700),
                   onPressed: widget.onDelete,
                   tooltip: 'Удалить',
                   padding: EdgeInsets.zero,
@@ -267,83 +262,72 @@ class _DeviceCardState extends State<DeviceCard> {
     );
   }
 
-///PU04
-Widget _buildSaunaCard() {
-  final isOn = widget.device.isOn ?? false;
-  
-  return GestureDetector(
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => SaunaScreen(
-            device: widget.device,
-            mqttManager: widget.mqttManager,
+  Widget _buildSaunaCard(bool isDark) {
+    final isOn = widget.device.isOn ?? false;
+    
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SaunaScreen(
+              device: widget.device,
+              mqttManager: widget.mqttManager,
+            ),
           ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        decoration: BoxDecoration(
+          color: isOn 
+              ? (isDark ? Colors.orange.withOpacity(0.2) : Colors.orange.shade50)
+              : (isDark ? Colors.grey.withOpacity(0.2) : Colors.grey.shade100),
+          borderRadius: BorderRadius.circular(12),
         ),
-      );
-    },
-    child: Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-      decoration: BoxDecoration(
-        color: isOn ? Colors.orange.shade50 : Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          // Температура
-          Expanded(
-            child: Column(
-              children: [
-                const Icon(Icons.thermostat, size: 20, color: Colors.orange),
-                const SizedBox(height: 4),
-                Text(
-                  widget.device.temperature != null
-                      ? '${widget.device.temperature!.toStringAsFixed(1)}°C'
-                      : '---°C',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                children: [
+                  Icon(Icons.thermostat, size: 20, color: Colors.orange),
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.device.temperature != null
+                        ? '${widget.device.temperature!.toStringAsFixed(1)}°C'
+                        : '---°C',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          // Влажность
-          Expanded(
-            child: Column(
-              children: [
-                const Icon(Icons.water_drop, size: 20, color: Colors.blue),
-                const SizedBox(height: 4),
-                Text(
-                  widget.device.humidity != null
-                      ? '${widget.device.humidity!.toStringAsFixed(1)}%'
-                      : '---%',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
+            Expanded(
+              child: Column(
+                children: [
+                  Icon(Icons.water_drop, size: 20, color: Colors.blue),
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.device.humidity != null
+                        ? '${widget.device.humidity!.toStringAsFixed(1)}%'
+                        : '---%',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          // Кнопка вкл/выкл
-         // Switch(
-         //   value: isOn,
-         //   onChanged: (value) {
-         //     _sendCommand({'state': value ? 'ON' : 'OFF'});
-         //   },
-        //    activeColor: Colors.orange,
-        //  ),
-         // const Icon(Icons.chevron_right, color: Colors.grey),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
-/// 
-  // Компактная карточка датчика
-  Widget _buildCompactSensorCard() {
+    );
+  }
+
+  Widget _buildCompactSensorCard(bool isDark) {
     return Row(
       children: [
         Expanded(
@@ -352,6 +336,7 @@ Widget _buildSaunaCard() {
                 ? '${widget.device.temperature!.toStringAsFixed(1)}°C'
                 : '---°C',
             icon: Icons.thermostat,
+            isDark: isDark,
           ),
         ),
         const SizedBox(width: 12),
@@ -361,14 +346,14 @@ Widget _buildSaunaCard() {
                 ? '${widget.device.humidity!.toStringAsFixed(1)}%'
                 : '---%',
             icon: Icons.water_drop,
+            isDark: isDark,
           ),
         ),
       ],
     );
   }
 
-  // Компактная карточка переключателя
-  Widget _buildCompactSwitchCard() {
+  Widget _buildCompactSwitchCard(bool isDark) {
     return Row(
       children: [
         Expanded(
@@ -377,14 +362,14 @@ Widget _buildSaunaCard() {
             isOn: widget.device.isOn ?? false,
             onToggle: (value) => _sendCommand({'state': value ? 'ON' : 'OFF'}),
             icon: _getControlIcon(),
+            isDark: isDark,
           ),
         ),
       ],
     );
   }
 
-  // Компактная LED карточка
-  Widget _buildCompactLedCard() {
+  Widget _buildCompactLedCard(bool isDark) {
     return Column(
       children: [
         Row(
@@ -395,6 +380,7 @@ Widget _buildSaunaCard() {
                 isOn: widget.device.isOn ?? false,
                 onToggle: (value) => _sendCommand({'state': value ? 'ON' : 'OFF'}),
                 icon: Icons.lightbulb,
+                isDark: isDark,
               ),
             ),
           ],
@@ -402,7 +388,7 @@ Widget _buildSaunaCard() {
         const SizedBox(height: 8),
         Row(
           children: [
-            const Icon(Icons.brightness_6, size: 16, color: Colors.grey),
+            Icon(Icons.brightness_6, size: 16, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
             const SizedBox(width: 8),
             Expanded(
               child: Slider(
@@ -427,7 +413,7 @@ Widget _buildSaunaCard() {
             ),
             Text(
               '${_localBrightness ?? widget.device.brightness ?? 0}%',
-              style: const TextStyle(fontSize: 12),
+              style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : Colors.black87),
             ),
           ],
         ),
@@ -435,11 +421,9 @@ Widget _buildSaunaCard() {
     );
   }
 
-  // Компактная термостат карточка
-  Widget _buildCompactTermostatCard() {
+  Widget _buildCompactTermostatCard(bool isDark) {
     return Column(
       children: [
-        // Строка с текущей и установленной температурой + кнопка
         Row(
           children: [
             Expanded(
@@ -449,6 +433,7 @@ Widget _buildSaunaCard() {
                     ? '${widget.device.temperature!.toStringAsFixed(1)}°C'
                     : '---°C',
                 icon: Icons.thermostat,
+                isDark: isDark,
               ),
             ),
             const SizedBox(width: 8),
@@ -457,13 +442,15 @@ Widget _buildSaunaCard() {
                 title: 'Уст',
                 value: '${(_localTargetTemp ?? widget.device.targetTemperature ?? 20).toInt()}°C',
                 icon: Icons.settings,
+                isDark: isDark,
               ),
             ),
-            // Кнопка вкл/выкл
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: (_localIsOn ?? widget.device.isOn ?? false) ? Colors.green.shade50 : Colors.grey.shade100,
+                color: (_localIsOn ?? widget.device.isOn ?? false) 
+                    ? (isDark ? Colors.green.withOpacity(0.2) : Colors.green.shade50)
+                    : (isDark ? Colors.grey.withOpacity(0.2) : Colors.grey.shade100),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
@@ -486,7 +473,7 @@ Widget _buildSaunaCard() {
                         'value': (_localTargetTemp ?? widget.device.targetTemperature ?? 20).toInt(),
                       });
                     },
-                    activeThumbColor: Colors.green,
+                    activeColor: Colors.green,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ],
@@ -495,10 +482,9 @@ Widget _buildSaunaCard() {
           ],
         ),
         const SizedBox(height: 8),
-        // Слайдер для установки температуры
         Row(
           children: [
-            const Icon(Icons.thermostat, size: 16, color: Colors.orange),
+            Icon(Icons.thermostat, size: 16, color: Colors.orange),
             const SizedBox(width: 8),
             Expanded(
               child: Slider(
@@ -523,30 +509,27 @@ Widget _buildSaunaCard() {
             ),
             Text(
               '${(_localTargetTemp ?? widget.device.targetTemperature ?? 20).toInt()}°C',
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: isDark ? Colors.white70 : Colors.black87),
             ),
           ],
         ),
       ],
     );
   }
-/////////////////////
-  // Карточка розетки с измерением
-  Widget _buildSocketCard() {
+
+  Widget _buildSocketCard(bool isDark) {
     return Column(
       children: [
-        // Кнопка вкл/выкл (только для rozv)
         if (widget.device.type == DeviceType.roz) ...[
           _CompactSwitchControl(
             title: 'Розетка',
             isOn: widget.device.isOn ?? false,
             onToggle: (value) => _sendCommand({'state': value ? 'ON' : 'OFF'}),
             icon: Icons.power_settings_new,
+            isDark: isDark,
           ),
           const SizedBox(height: 8),
         ],
-
-        // Показания тока и напряжения
         Row(
           children: [
             Expanded(
@@ -556,6 +539,7 @@ Widget _buildSaunaCard() {
                     ? '${widget.device.voltage!.toStringAsFixed(1)}V'
                     : '---V',
                 icon: Icons.flash_on,
+                isDark: isDark,
               ),
             ),
             const SizedBox(width: 8),
@@ -566,6 +550,7 @@ Widget _buildSaunaCard() {
                     ? '${widget.device.current!.toStringAsFixed(2)}A'
                     : '---A',
                 icon: Icons.electric_bolt,
+                isDark: isDark,
               ),
             ),
           ],
@@ -580,19 +565,17 @@ Widget _buildSaunaCard() {
                     ? '${widget.device.power!.toStringAsFixed(0)}W'
                     : '---W',
                 icon: Icons.speed,
+                isDark: isDark,
               ),
             ),
             const SizedBox(width: 8),
-            Expanded(
-              child: Container(), // Пустой для выравнивания
-            ),
+            Expanded(child: Container()),
           ],
         ),
       ],
     );
   }
 
- ////////////////////
   IconData _getControlIcon() {
     switch (widget.device.type) {
       case DeviceType.lamp:
@@ -617,7 +600,6 @@ Widget _buildSaunaCard() {
     debugPrint('Sending command to $topic: $payload');
     widget.mqttManager?.publish(topic, payload);
   }
-
 }
 
 // Компактный виджет для отображения значения датчика
@@ -625,11 +607,13 @@ class _CompactSensorValue extends StatelessWidget {
   final String value;
   final IconData icon;
   final String? title;
+  final bool isDark;
 
   const _CompactSensorValue({
     required this.value,
     required this.icon,
     this.title,
+    required this.isDark,
   });
 
   @override
@@ -637,23 +621,27 @@ class _CompactSensorValue extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: isDark ? Colors.grey.withOpacity(0.2) : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 14, color: Colors.blue),
+          Icon(icon, size: 14, color: isDark ? Colors.lightBlueAccent : Colors.blue),
           const SizedBox(width: 4),
           if (title != null) ...[
             Text(
               '$title: ',
-              style: const TextStyle(fontSize: 11, color: Colors.grey),
+              style: TextStyle(fontSize: 11, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
             ),
           ],
           Text(
             value,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: isDark ? Colors.white70 : Colors.black87,
+            ),
           ),
         ],
       ),
@@ -667,12 +655,14 @@ class _CompactSwitchControl extends StatelessWidget {
   final bool isOn;
   final ValueChanged<bool> onToggle;
   final IconData icon;
+  final bool isDark;
 
   const _CompactSwitchControl({
     required this.title,
     required this.isOn,
     required this.onToggle,
     required this.icon,
+    required this.isDark,
   });
 
   @override
@@ -680,7 +670,9 @@ class _CompactSwitchControl extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       decoration: BoxDecoration(
-        color: isOn ? Colors.green.shade50 : Colors.grey.shade100,
+        color: isOn 
+            ? (isDark ? Colors.green.withOpacity(0.2) : Colors.green.shade50)
+            : (isDark ? Colors.grey.withOpacity(0.2) : Colors.grey.shade100),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -688,18 +680,23 @@ class _CompactSwitchControl extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 16, color: isOn ? Colors.green : Colors.grey),
+              Icon(icon, size: 16, color: isOn ? Colors.green : (isDark ? Colors.grey.shade400 : Colors.grey)),
               const SizedBox(width: 6),
               Text(
                 title,
-                style: const TextStyle(fontSize: 12),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isOn 
+                      ? (isDark ? Colors.white70 : Colors.black87)
+                      : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                ),
               ),
             ],
           ),
           Switch(
             value: isOn,
             onChanged: onToggle,
-            activeThumbColor: Colors.green,
+            activeColor: Colors.green,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ],

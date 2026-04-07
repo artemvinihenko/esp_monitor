@@ -4,21 +4,16 @@ import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'services/work_manager_service.dart';
-import 'services/notification_service.dart';
 import 'providers/device_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_screen.dart';
+import 'providers/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Инициализация WorkManager
   await WorkManagerService.init();
   
-  // Инициализация уведомлений
-  await NotificationService.init();
-  
-  // Запрос разрешений
   await _requestPermissions();
   
   WakelockPlus.enable();
@@ -46,25 +41,132 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => DeviceProvider(),
-      lazy: false,
-      child: MaterialApp(
-        title: 'IOT мониторинг',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          useMaterial3: true,
-        ),
-        initialRoute: '/',
-        routes: {
-          '/': (context) => const AuthWrapper(),
-          '/login': (context) => const LoginScreen(),
-          '/main': (context) => const MainScreen(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => DeviceProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+      ],
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return MaterialApp(
+            title: 'IOT мониторинг',
+            theme: _getThemeData(themeProvider),
+            darkTheme: _getThemeData(themeProvider),
+            themeMode: themeProvider.themeMode,
+            initialRoute: '/',
+            routes: {
+              '/': (context) => const AuthWrapper(),
+              '/login': (context) => const LoginScreen(),
+              '/main': (context) => const MainScreen(),
+            },
+            debugShowCheckedModeBanner: false,
+          );
         },
-        debugShowCheckedModeBanner: false,
       ),
     );
   }
+  
+  static ThemeData _getThemeData(ThemeProvider provider) {
+    if (provider.isAmethyst) {
+      return _amethystTheme;
+    } else if (provider.isDarkMode) {
+      return _darkTheme;
+    } else {
+      return _lightTheme;
+    }
+  }
+  
+  // Светлая тема
+  static final ThemeData _lightTheme = ThemeData(
+    brightness: Brightness.light,
+    primarySwatch: Colors.blue,
+    useMaterial3: true,
+    scaffoldBackgroundColor: Colors.grey.shade50,
+    appBarTheme: const AppBarTheme(
+      elevation: 0,
+      centerTitle: false,
+      backgroundColor: Colors.blue,
+      foregroundColor: Colors.white,
+    ),
+    cardTheme: const CardThemeData(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+    ),
+  );
+  
+  // Темная тема
+  static final ThemeData _darkTheme = ThemeData(
+    brightness: Brightness.dark,
+    primarySwatch: Colors.blue,
+    useMaterial3: true,
+    scaffoldBackgroundColor: Colors.grey.shade900,
+    appBarTheme: const AppBarTheme(
+      elevation: 0,
+      centerTitle: false,
+      backgroundColor: Color.fromARGB(150, 71, 28, 145),
+      foregroundColor: Colors.white,
+    ),
+    cardTheme: const CardThemeData(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+    ),
+  );
+  
+  // Аметист тема (черно-фиолетовая)
+  static final ThemeData _amethystTheme = ThemeData(
+    brightness: Brightness.dark,
+    primaryColor: Colors.deepPurple,
+    primarySwatch: Colors.deepPurple,
+    useMaterial3: true,
+    scaffoldBackgroundColor: Colors.black,
+    appBarTheme: const AppBarTheme(
+      elevation: 0,
+      centerTitle: false,
+      backgroundColor: Colors.transparent,
+      foregroundColor: Colors.white,
+    ),
+    cardTheme: CardThemeData(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      color: Colors.deepPurple.withOpacity(0.8),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.deepPurple.shade400),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.deepPurple.shade400),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.deepPurple, width: 2),
+      ),
+    ),
+    textTheme: const TextTheme(
+      bodyLarge: TextStyle(color: Colors.white70),
+      bodyMedium: TextStyle(color: Colors.white70),
+      titleLarge: TextStyle(color: Colors.white),
+      titleMedium: TextStyle(color: Colors.white),
+    ),
+  );
 }
 
 class AuthWrapper extends StatefulWidget {
@@ -90,34 +192,27 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
     super.dispose();
   }
 
- @override
-void didChangeAppLifecycleState(AppLifecycleState state) {
-  debugPrint('App lifecycle state: $state');
-  final provider = Provider.of<DeviceProvider>(context, listen: false);
-  
-  switch (state) {
-    case AppLifecycleState.resumed:
-     debugPrint('App resumed');
-      // Просто переподключаем MQTT, не проверяем время опроса
-      provider.onAppResumed();
-      // Запускаем опрос сейчас
-      WorkManagerService.runNow();
-      break;
-    default:
-      break;
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    print('App lifecycle state: $state');
+    final provider = Provider.of<DeviceProvider>(context, listen: false);
+    
+    switch (state) {
+      case AppLifecycleState.resumed:
+        print('App resumed');
+        provider.onAppResumed();
+        break;
+      default:
+        break;
+    }
   }
-}
-
 
   Future<bool> _checkAuth() async {
     final provider = Provider.of<DeviceProvider>(context, listen: false);
     final hasCredentials = await provider.checkCredentials();
 
     if (hasCredentials) {
-      // Запускаем WorkManager для фонового опроса
       await WorkManagerService.startPolling(intervalMinutes: 15);
-
-     // await provider.loadBackgroundData();
       return await provider.testMqttConnection();
     }
     return false;
