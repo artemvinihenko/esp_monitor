@@ -136,13 +136,13 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                 color: Colors.orange.shade50,
                 child: Column(
                   children: [
-                    ListTile(
-                      leading: const Icon(Icons.warning_amber, color: Colors.orange),
-                      title: const Text(
+                    const ListTile(
+                      leading: Icon(Icons.warning_amber, color: Colors.orange),
+                      title: Text(
                         'Важно для фоновой работы!',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      subtitle: const Text(
+                      subtitle: Text(
                         'На некоторых телефонах (Xiaomi, Huawei, Oppo, TECNO) нужно разрешить автозапуск в настройках системы',
                       ),
                     ),
@@ -287,7 +287,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                   subtitle: const Text('Позволяет приложению работать в фоне без ограничений'),
                   value: _isBatteryOptimizationIgnored,
                   onChanged: (_) => _requestBatteryOptimization(),
-                  activeColor: Colors.green,
+                  activeThumbColor: Colors.green,
                 ),
               ),
 
@@ -314,7 +314,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                       _hasNotificationPermission = status.isGranted;
                     });
                   },
-                  activeColor: Colors.green,
+                  activeThumbColor: Colors.green,
                 ),
               ),
 
@@ -341,7 +341,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                       _hasWifiPermission = status.isGranted;
                     });
                   },
-                  activeColor: Colors.green,
+                  activeThumbColor: Colors.green,
                 ),
               ),
 
@@ -355,15 +355,15 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                   color: Colors.blue.shade50,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Column(
+                child: const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'ℹ️ Для стабильной фоновой работы:',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
+                    SizedBox(height: 8),
+                    Text(
                       '1. Нажмите "Открыть настройки приложения" и разрешите все разрешения\n'
                       '2. Включите "Игнорировать оптимизацию батареи"\n'
                       '3. Разрешите уведомления\n'

@@ -39,93 +39,6 @@ Future<void> _requestPermissions() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => DeviceProvider()),
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-      ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, child) {
-          return MaterialApp(
-            title: 'IOT мониторинг',
-            theme: _getThemeData(themeProvider),
-            darkTheme: _getThemeData(themeProvider),
-            themeMode: themeProvider.themeMode,
-            initialRoute: '/',
-            routes: {
-              '/': (context) => const AuthWrapper(),
-              '/login': (context) => const LoginScreen(),
-              '/main': (context) => const MainScreen(),
-            },
-            debugShowCheckedModeBanner: false,
-          );
-        },
-      ),
-    );
-  }
-  
-  static ThemeData _getThemeData(ThemeProvider provider) {
-    if (provider.isAmethyst) {
-      return _amethystTheme;
-    } else if (provider.isDarkMode) {
-      return _darkTheme;
-    } else {
-      return _lightTheme;
-    }
-  }
-  
-  // Светлая тема
-  static final ThemeData _lightTheme = ThemeData(
-    brightness: Brightness.light,
-    primarySwatch: Colors.blue,
-    useMaterial3: true,
-    scaffoldBackgroundColor: Colors.grey.shade50,
-    appBarTheme: const AppBarTheme(
-      elevation: 0,
-      centerTitle: false,
-      backgroundColor: Colors.blue,
-      foregroundColor: Colors.white,
-    ),
-    cardTheme: const CardThemeData(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12)),
-      ),
-    ),
-    inputDecorationTheme: InputDecorationTheme(
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-    ),
-  );
-  
-  // Темная тема
-  static final ThemeData _darkTheme = ThemeData(
-    brightness: Brightness.dark,
-    primarySwatch: Colors.blue,
-    useMaterial3: true,
-    scaffoldBackgroundColor: Colors.grey.shade900,
-    appBarTheme: const AppBarTheme(
-      elevation: 0,
-      centerTitle: false,
-      backgroundColor: Color.fromARGB(150, 71, 28, 145),
-      foregroundColor: Colors.white,
-    ),
-    cardTheme: const CardThemeData(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12)),
-      ),
-    ),
-    inputDecorationTheme: InputDecorationTheme(
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-    ),
-  );
-  
   // Аметист тема (черно-фиолетовая)
   static final ThemeData _amethystTheme = ThemeData(
     brightness: Brightness.dark,
@@ -167,6 +80,93 @@ class MyApp extends StatelessWidget {
       titleMedium: TextStyle(color: Colors.white),
     ),
   );
+
+  // Темная тема
+  static final ThemeData _darkTheme = ThemeData(
+    brightness: Brightness.dark,
+    primarySwatch: Colors.blue,
+    useMaterial3: true,
+    scaffoldBackgroundColor: Colors.grey.shade900,
+    appBarTheme: const AppBarTheme(
+      elevation: 0,
+      centerTitle: false,
+      backgroundColor: Color.fromARGB(150, 71, 28, 145),
+      foregroundColor: Colors.white,
+    ),
+    cardTheme: const CardThemeData(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+    ),
+  );
+
+  // Светлая тема
+  static final ThemeData _lightTheme = ThemeData(
+    brightness: Brightness.light,
+    primarySwatch: Colors.blue,
+    useMaterial3: true,
+    scaffoldBackgroundColor: Colors.grey.shade50,
+    appBarTheme: const AppBarTheme(
+      elevation: 0,
+      centerTitle: false,
+      backgroundColor: Colors.blue,
+      foregroundColor: Colors.white,
+    ),
+    cardTheme: const CardThemeData(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+    ),
+  );
+
+  static ThemeData _getThemeData(ThemeProvider provider) {
+    if (provider.isAmethyst) {
+      return _amethystTheme;
+    } else if (provider.isDarkMode) {
+      return _darkTheme;
+    } else {
+      return _lightTheme;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => DeviceProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+      ],
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return MaterialApp(
+            title: 'IOT мониторинг',
+            theme: _getThemeData(themeProvider),
+            darkTheme: _getThemeData(themeProvider),
+            themeMode: themeProvider.themeMode,
+            initialRoute: '/',
+            routes: {
+              '/': (context) => const AuthWrapper(),
+              '/login': (context) => const LoginScreen(),
+              '/main': (context) => const MainScreen(),
+            },
+            debugShowCheckedModeBanner: false,
+          );
+        },
+      ),
+    );
+  }
 }
 
 class AuthWrapper extends StatefulWidget {
@@ -178,19 +178,6 @@ class AuthWrapper extends StatefulWidget {
 
 class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
   Future<bool>? _checkFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _checkFuture = _checkAuth();
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -205,6 +192,19 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
       default:
         break;
     }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _checkFuture = _checkAuth();
   }
 
   Future<bool> _checkAuth() async {
